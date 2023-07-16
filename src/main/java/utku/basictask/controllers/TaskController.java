@@ -1,54 +1,54 @@
 package utku.basictask.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import utku.basictask.dto.TaskDto;
 import utku.basictask.entity.Task;
 import utku.basictask.exceptions.TaskIsNotValidException;
 import utku.basictask.exceptions.TaskNotDeletedException;
 import utku.basictask.exceptions.TaskNotFoundException;
 import utku.basictask.exceptions.TaskNotUpdatedException;
-import utku.basictask.request.TaskCreateRequest;
-import utku.basictask.request.TaskUpdateRequest;
-import utku.basictask.response.TaskResponse;
+import utku.basictask.mapper.TaskMapper;
 import utku.basictask.services.TaskService;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/task")
 public class TaskController {
+    private TaskMapper taskMapper;
     private TaskService taskService;
 
-    public TaskController(TaskService taskService) {
+    public TaskController(TaskService taskService, TaskMapper taskMapper) {
         this.taskService = taskService;
+        this.taskMapper = taskMapper;
     }
 
     @GetMapping
-    public List<TaskResponse> getAllTasks(){
-        List<Task> tasks;
-
-        tasks = taskService.getAllTasks();
-
-        return tasks.stream().map(task -> new TaskResponse(task)).collect(Collectors.toList());
+    public ResponseEntity<List<TaskDto>> getAllTasks(){
+        return new ResponseEntity<>(taskMapper.entitiesToDtos(taskService.getAllTasks()),HttpStatus.OK);
     }
     @GetMapping("/{taskId}")
-    public TaskResponse getOneTaskById(@PathVariable Long taskId){
+    public ResponseEntity<TaskDto> getOneTaskById(@PathVariable Long taskId){
         Task task = taskService.getTaskById(taskId);
         if(task == null){
             throw new TaskNotFoundException();
         }
-        return new TaskResponse(task);
+        return new ResponseEntity<>(taskMapper.entityToDto(task),HttpStatus.OK);
     }
     @PostMapping
-    public Task createTask(@RequestBody TaskCreateRequest taskRequest){
+    public ResponseEntity<Task> createTask(@RequestBody TaskDto taskRequest){
         if(!isTaskValid(taskRequest)){
             throw new TaskIsNotValidException();
         }
-        return taskService.createOneTask(taskRequest);
+        return new ResponseEntity<>(taskService.createOneTask(taskMapper.dtoToEntityToCreate(taskRequest)),HttpStatus.CREATED);
     }
     @PutMapping("/{taskId}")
-    public Task updateTask(@PathVariable Long taskId , @RequestBody TaskUpdateRequest taskUpdate){
+    public ResponseEntity<Task> updateTask(@PathVariable Long taskId , @RequestBody TaskDto taskUpdate){
         Task task = taskService.getTaskById(taskId);
 
         if(!isTaskUpdateValid(taskUpdate)){
@@ -57,7 +57,8 @@ public class TaskController {
         else if (task == null){
             throw new TaskNotFoundException();
         }
-        return taskService.updateOneTask(taskUpdate,taskId);
+
+        return new ResponseEntity<>(taskService.updateOneTask(taskMapper.dtoToEntityToUpdate(task,taskUpdate)),HttpStatus.OK);
     }
     @DeleteMapping("/{taskId}")
     public void deleteOneTaskById(@PathVariable Long taskId){
@@ -71,14 +72,14 @@ public class TaskController {
         }
     }
 
-    public boolean isTaskValid(TaskCreateRequest taskRequest){
+    public boolean isTaskValid(TaskDto taskRequest){
         if(taskRequest.getName() == "" || taskRequest.getDescription() == ""|| taskRequest.getStatus() == "" ||
            taskRequest.getPoint() ==null || taskRequest.getAssignedTo()==""){
             return false;
         }
         return true;
     }
-    public boolean isTaskUpdateValid(TaskUpdateRequest taskRequest){
+    public boolean isTaskUpdateValid(TaskDto taskRequest){
         if(taskRequest.getName() == "" || taskRequest.getDescription() == ""|| taskRequest.getStatus() == "" ||
                 taskRequest.getPoint() ==null || taskRequest.getAssignedTo()==""){
             return false;

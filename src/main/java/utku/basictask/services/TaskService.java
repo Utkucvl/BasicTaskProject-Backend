@@ -3,8 +3,7 @@ package utku.basictask.services;
 import org.springframework.stereotype.Service;
 import utku.basictask.entity.Task;
 import utku.basictask.repository.TaskRepository;
-import utku.basictask.request.TaskCreateRequest;
-import utku.basictask.request.TaskUpdateRequest;
+
 
 import java.util.List;
 
@@ -25,30 +24,14 @@ public class TaskService {
         return taskRepository.findById(taskId).orElse(null);
     }
 
-    public Task createOneTask(TaskCreateRequest taskRequest) {
-        long millis=System.currentTimeMillis();
-        java.sql.Date date=new java.sql.Date(millis+10800000);
-        Task toSave = new Task();
-        toSave.setCreatedDate(date);
-        toSave.setName(taskRequest.getName());
-        toSave.setDescription(taskRequest.getDescription());
-        toSave.setPoint(taskRequest.getPoint());
-        toSave.setAssignedTo(taskRequest.getAssignedTo());
-        toSave.setStatus(taskRequest.getStatus());
-
-        return taskRepository.save(toSave);
+    public Task createOneTask(Task task) {
+        task.setCreatedDate(new java.sql.Date(System.currentTimeMillis()+10800000));
+        return taskRepository.save((task));
     }
 
-    public Task updateOneTask(TaskUpdateRequest taskUpdate, Long taskId) {
-        Task task = taskRepository.findById(taskId).orElse(null);
-        if(task != null){
-            task.setStatus(taskUpdate.getStatus());
-            task.setName(taskUpdate.getName());
-            task.setPoint(taskUpdate.getPoint());
-            task.setAssignedTo(taskUpdate.getAssignedTo());
-            task.setDescription(taskUpdate.getDescription());
-        }
-        return taskRepository.save((task));
+    public Task updateOneTask(Task taskUpdate) {
+
+        return taskRepository.save(taskUpdate);
     }
 
     public void deleteOneTaskById(Long taskId) {
