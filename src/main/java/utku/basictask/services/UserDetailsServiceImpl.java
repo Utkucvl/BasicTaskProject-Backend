@@ -1,0 +1,40 @@
+package utku.basictask.services;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+import utku.basictask.security.JWTUserDetails;
+import utku.basictask.entity.User;
+import utku.basictask.repository.UserRepository;
+
+@Service
+public class UserDetailsServiceImpl implements UserDetailsService {
+    private UserRepository userRepository;
+
+    public UserDetailsServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = userRepository.findByUserName(username);
+        return JWTUserDetails.create(user);
+    }
+
+    public UserDetails loadUserById(Long id ){
+        User user = userRepository.findById(id).get();
+        return JWTUserDetails.create(user);
+    }
+    public static String extractUsernameFromAuthentication() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username;
+        if ( authentication==null ) {
+            return null;
+        }
+        username = authentication.getName();
+        return username;
+    }
+}

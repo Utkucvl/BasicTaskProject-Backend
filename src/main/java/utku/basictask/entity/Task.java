@@ -12,10 +12,11 @@ import java.util.Date;
 @Data
 @Entity
 @Table(name = "task")
-public class Task {
+public class Task extends Auditable{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
 
     String name;
 
@@ -23,9 +24,9 @@ public class Task {
 
     String status;
 
-    @Column(name = "date")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private Date createdDate;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    User user;
 
     String assignedTo;
 

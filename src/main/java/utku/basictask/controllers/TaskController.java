@@ -6,12 +6,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import utku.basictask.dto.TaskDto;
 import utku.basictask.entity.Task;
-import utku.basictask.exceptions.TaskIsNotValidException;
-import utku.basictask.exceptions.TaskNotDeletedException;
-import utku.basictask.exceptions.TaskNotFoundException;
-import utku.basictask.exceptions.TaskNotUpdatedException;
+import utku.basictask.entity.User;
+import utku.basictask.exceptions.*;
 import utku.basictask.mapper.TaskMapper;
 import utku.basictask.services.TaskService;
+import utku.basictask.services.UserService;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -23,9 +22,12 @@ public class TaskController {
     private TaskMapper taskMapper;
     private TaskService taskService;
 
-    public TaskController(TaskService taskService, TaskMapper taskMapper) {
+    private UserService userService;
+
+    public TaskController(TaskService taskService, TaskMapper taskMapper,UserService userService) {
         this.taskService = taskService;
         this.taskMapper = taskMapper;
+        this.userService = userService;
     }
 
     @GetMapping
@@ -45,7 +47,11 @@ public class TaskController {
         if(!isTaskValid(taskRequest)){
             throw new TaskIsNotValidException();
         }
-        return new ResponseEntity<>(taskService.createOneTask(taskMapper.dtoToEntityToCreate(taskRequest)),HttpStatus.CREATED);
+        User user = userService.findById(taskRequest.getUserId());
+        if(user == null){
+            throw new UserNotFoundException();
+        }
+        return new ResponseEntity<>(taskService.createOneTask(taskMapper.dtoToEntityToCreate(taskRequest,user)),HttpStatus.CREATED);
     }
     @PutMapping("/{taskId}")
     public ResponseEntity<Task> updateTask(@PathVariable Long taskId , @RequestBody TaskDto taskUpdate){
@@ -57,8 +63,11 @@ public class TaskController {
         else if (task == null){
             throw new TaskNotFoundException();
         }
-
-        return new ResponseEntity<>(taskService.updateOneTask(taskMapper.dtoToEntityToUpdate(task,taskUpdate)),HttpStatus.OK);
+        User user = userService.findById(taskUpdate.getUserId());
+        if(user == null){
+            throw new UserNotFoundException();
+        }
+        return new ResponseEntity<>(taskService.updateOneTask(taskMapper.dtoToEntityToUpdate(task,taskUpdate,user)),HttpStatus.OK);
     }
     @DeleteMapping("/{taskId}")
     public void deleteOneTaskById(@PathVariable Long taskId){
@@ -108,6 +117,11 @@ public class TaskController {
     @ExceptionHandler(TaskNotUpdatedException.class)
     @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
     private void handleTaskNotUpdatedException() {
+
+    }
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    private void handleUserNotFoundException() {
 
     }
 }
